@@ -1,0 +1,11 @@
+*.pem
+*.tar.gz
+__pycache__/
+*.pyc
+
+/input/user.json
+
+/output/db.libsql
+
+.idea/
+.DS_Store
