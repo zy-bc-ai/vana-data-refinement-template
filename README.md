@@ -1,108 +1,62 @@
-# Vana Satya Proof of Contribution - Python Template
+# Vana Data Refinement Template
 
-This repository serves as a template for creating a [proof of contribution](https://docs.vana.org/docs/proof-of-contribution/) tasks using Python. It is executed on Vana's Satya Network, a group of highly confidential and secure compute nodes that can validate data without revealing its contents to the node operator.
+This repository serves as a template for creating Dockerized data refinement tasks that transform raw user data into normalized (and potentially anonymized) SQLite-compatible databases. Once created, it's designed to be stored in Vana's Data Registry, and indexed for querying by Vana's Query Engine.
 
 ## Overview
 
-This template provides a basic structure for building proof tasks that:
+This template provides a structure for building data refinement tasks that:
 
-1. Read input files from the `/input` directory.
-2. Process the data securely, running any necessary validations to prove the data authentic, unique, high quality, etc.
-3. Write proof results to the `/output/results.json` file in the following format:
-
-```json
-{
-  "dlp_id": 1234, // DLP ID is found in the Root Network contract after the DLP is registered
-  "valid": false, // A single boolean to summarize if the file is considered valid in this DLP
-  "score": 0.7614457831325301, // A score between 0 and 1 for the file, used to determine how valuable the file is. This can be an aggregation of the individual scores below.
-  "authenticity": 1.0, // A score between 0 and 1 to rate if the file has been tampered with
-  "ownership": 1.0, // A score between 0 and 1 to verify the ownership of the file
-  "quality": 0.6024096385542169, // A score between 0 and 1 to show the quality of the file
-  "uniqueness": 0, // A score between 0 and 1 to show unique the file is, compared to others in the DLP
-  "attributes": { // Custom attributes added to the proof to provide extra context, written offchain in IPFS
-    "total_score": 0.5,
-    "score_threshold": 0.83,
-    "email_verified": true
-  },
-  "metadata": { // Custom attributes added to the proof to provide extra context, written onchain
-    "dlp_id": 1234
-  }
-}
-```
-
-The project is designed to work with Intel TDX (Trust Domain Extensions), providing hardware-level isolation and security guarantees for confidential computing workloads.
+1. Read raw data files from the `/input` directory
+2. Transform the data into a normalized SQLite database schema (specifically libSQL, a modern fork of SQLite)
+3. Optionally mask or remove PII (Personally Identifiable Information)
+4. Encrypt the refined data with a derivative of the original file encryption key
+5. Upload the encrypted data to IPFS
+6. Output the schema and IPFS URL to the `/output` directory
 
 ## Project Structure
 
-- `my_proof/`: Contains the main proof logic
-    - `proof.py`: Implements the proof generation logic
-    - `__main__.py`: Entry point for the proof execution
-    - `models/`: Data models for the proof system
-- `input/`: Contains a sample input file for testing. In production, the Satya node will mount the decrypted data point to the /input directory of the docker container
-- `output/`: Results output from the container is written here, this is passed to the Satya node after execution
-- `Dockerfile`: Defines the container image for the proof task
+- `refiner/`: Contains the main refinement logic
+    - `refine.py`: Core refinement implementation
+    - `config.py`: Environment variables and settings needed to run your refinement
+    - `__main__.py`: Entry point for the refinement execution
+    - `models/`: Pydantic and SQLAlchemy data models (for both unrefined and refined data)
+    - `transformer/`: Data transformation logic
+    - `utils/`: Utility functions for encryption, IPFS upload, etc.
+- `input/`: Contains raw data files to be refined
+- `output/`: Contains refined outputs:
+    - `schema.json`: Database schema definition
+    - `db.libsql`: SQLite database file
+    - `db.libsql.pgp`: Encrypted database file
+- `Dockerfile`: Defines the container image for the refinement task
 - `requirements.txt`: Python package dependencies
 
 ## Getting Started
 
-To use this template:
-
 1. Fork this repository
-2. Modify the `my_proof/proof.py` file to implement your specific proof logic
-3. Update the project dependencies in `requirements.txt` if needed
-4. Commit your changes and push to your repository
-
-## Customizing the Proof Logic
-
-The main proof logic is implemented in `my_proof/proof.py`. To customize it, update the `Proof.generate()` function to change how input files are processed.
-
-The proof can be configured using environment variables, eg:
-
-- `USER_EMAIL`: The email address of the data contributor, to verify data ownership
-
-If you want to use a language other than Python, you can modify the Dockerfile to install the necessary dependencies and build the proof task in the desired language.
+1. Modify the config to match your environment, or add a .env file at the root
+1. Update the schemas in `refiner/models/` to define your raw and normalized data models
+1. Modify the refinement logic in `refiner/transformer/` to match your data structure
+1. Build and test your refinement container
 
 ## Local Development
 
-To run the proof locally for testing, you can use Docker:
+To run the refinement locally for testing:
 
 ```bash
+# With Python
+pip install --no-cache-dir -r requirements.txt
+python -m refiner
+
+# Or with Docker
 docker build -t refiner .
 docker run \
   --rm \
   --volume $(pwd)/input:/input \
   --volume $(pwd)/output:/output \
+  --env PINATA_API_KEY=your_key \
+  --env PINATA_API_SECRET=your_secret \
   refiner
 ```
-
-## Running with Intel TDX
-
-Intel TDX (Trust Domain Extensions) provides hardware-based memory encryption and integrity protection for virtual machines. To run this container in a TDX-enabled environment, follow your infrastructure provider's specific instructions for deploying confidential containers.
-
-Common volume mounts and environment variables:
-
-```bash
-docker run \
-  --rm \
-  --volume /path/to/input:/input \
-  --volume /path/to/output:/output \
-  --env USER_EMAIL=user123@gmail.com \
-  my-proof
-```
-
-Remember to populate the `/input` directory with the files you want to process.
-
-## Security Features
-
-This template leverages several security features:
-
-1. **Hardware-based Isolation**: The proof runs inside a TDX-protected environment, isolating it from the rest of the system
-2. **Input/Output Isolation**: Input and output directories are mounted separately, ensuring clear data flow boundaries
-3. **Minimal Container**: Uses a minimal Python base image to reduce attack surface
-
-## Customization
-
-Feel free to modify any part of this template to fit your specific needs. The goal is to provide a starting point that can be easily adapted to various proof tasks.
 
 ## Contributing
 
@@ -111,17 +65,4 @@ If you have suggestions for improving this template, please open an issue or sub
 ## License
 
 [MIT License](LICENSE)
-
-
-
-- raw data in /input directory
-- encrypt with DLP public key
-- 
-- upload refined data to Pinata
-- /output
-  - schema.json
-  - ipfs URL
-  - data.db
-  - data.db.encrypted -> encrypted w/ derived encryption key
-
 

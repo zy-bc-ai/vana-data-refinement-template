@@ -1,9 +1,10 @@
 from typing import Dict, Any, List
-from refiner.models.refined_models import Base
+from refiner.models.refined import Base
 from refiner.transformer.base_transformer import DataTransformer
-from refiner.models.refined_models import UserRefined, StorageMetric, AuthSource
-from refiner.models.unrefined_models import User
+from refiner.models.refined import UserRefined, StorageMetric, AuthSource
+from refiner.models.unrefined import User
 from refiner.utils.date import parse_timestamp
+from refiner.utils.pii import mask_email
 
 class UserTransformer(DataTransformer):
     """
@@ -27,7 +28,7 @@ class UserTransformer(DataTransformer):
         # Create user instance
         user = UserRefined(
             user_id=unrefined_user.userId,
-            email=unrefined_user.email,
+            email=mask_email(unrefined_user.email),  # Apply any PII masking (optional)
             name=unrefined_user.profile.name,
             locale=unrefined_user.profile.locale,
             created_at=created_at

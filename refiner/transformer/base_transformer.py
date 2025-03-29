@@ -1,7 +1,7 @@
 from typing import Dict, Any, List
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from refiner.models.refined_models import Base
+from refiner.models.refined import Base
 import sqlite3
 import os
 import logging

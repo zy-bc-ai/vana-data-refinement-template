@@ -1,2 +1,4 @@
+pgpy
 pydantic
+pydantic_settings
 sqlalchemy
