@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import sys
@@ -19,9 +20,12 @@ def run() -> None:
     extract_input()
 
     refiner = Refiner()
-    refiner.transform()
+    output = refiner.transform()
     
-    logging.info("Data transformation complete")
+    output_path = os.path.join(settings.OUTPUT_DIR, "output.json")
+    with open(output_path, 'w') as f:
+        json.dump(output.model_dump(), f, indent=2)    
+    logging.info(f"Data transformation complete: {output}")
 
 
 def extract_input() -> None:

@@ -1,7 +1,6 @@
-from typing import Optional
 from pydantic import BaseModel
 
-class Schema(BaseModel):
+class OffChainSchema(BaseModel):
     name: str
     version: str
     description: str
